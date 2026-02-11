@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jobconnect Limited Swift Contract Generator</title>
+    
+    <!-- CDN Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #001a4d 0%, #00BF00 50%, #ffffff 100%);
+            min-height: 100vh;
+            padding: 30px 20px;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 191, 0, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 191, 0, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 30px 60px rgba(0, 191, 0, 0.25), 0 0 80px rgba(0, 191, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #00BF00 0%, #009d00 50%, #006b00 100%);
+            color: white;
+            padding: 50px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: float 20s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(30px, -30px) rotate(180deg); }
+        }
+
+        .header h1 {
+            font-size: 2.8em;
+            margin-bottom: 12px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.98;
+            font-weight: 400;
+            position: relative;
+            z-index: 2;
+        }
+
+        .content {
+            padding: 50px 40px;
+        }
+
+        .intro-section {
+            background: linear-gradient(135deg, rgba(0, 191, 0, 0.08) 0%, rgba(0, 191, 0, 0.02) 100%);
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 40px;
+            border-left: 5px solid #00BF00;
+        }
+
+        .intro-title {
+            font-size: 1.25em;
+            font-weight: 700;
+            color: #00BF00;
+            margin-bottom: 12px;
+        }
+
+        .intro-text {
+            color: #555;
+            line-height: 1.7;
+            font-size: 0.95em;
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 1024px) {
+            .steps-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .steps-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .step-card {
+            background: linear-gradient(135deg, #f9f9f9 0%, #f5f5f5 100%);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid #e8e8e8;
+            transition: all 0.3s ease;
+        }
+
+        .step-card:hover {
+            border-color: #00BF00;
+            box-shadow: 0 8px 20px rgba(0, 191, 0, 0.15);
+            transform: translateY(-5px);
+        }
+
+        .step-emoji {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .step-label {
+            font-weight: 700;
+            color: #00BF00;
+            font-size: 0.9em;
+        }
+
+        .step-text {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .section {
+            margin-bottom: 35px;
+        }
+
+        .section-title {
+            font-size: 1.35em;
+            font-weight: 700;
+            color: #001a4d;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #00BF00;
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, #00BF00, #009d00);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.1em;
+            box-shadow: 0 4px 12px rgba(0, 191, 0, 0.3);
+        }
+
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #001a4d;
+            font-size: 0.98em;
+        }
+
+        .label-hint {
+            font-size: 0.8em;
+            color: #888;
+            font-weight: 400;
+            margin-top: 3px;
+        }
+
+        input[type="file"],
+        input[type="text"],
+        input[type="date"] {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 0.98em;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        input[type="file"]::file-selector-button {
+            background: linear-gradient(135deg, #00BF00, #009d00);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            margin-right: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 191, 0, 0.2);
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background: linear-gradient(135deg, #009d00, #007a00);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 191, 0, 0.3);
+        }
+
+        input[type="file"]:focus,
+        input[type="text"]:focus,
+        input[type="date"]:focus {
+            outline: none;
+            border-color: #00BF00;
+            box-shadow: 0 0 0 4px rgba(0, 191, 0, 0.15);
+            background: white;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .input-files-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .input-files-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .file-group {
+            border: 3px dashed #00BF00;
+            padding: 25px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, rgba(0, 191, 0, 0.03) 0%, rgba(0, 191, 0, 0.01) 100%);
+        }
+
+        .file-group:hover {
+            border-color: #009d00;
+            background: linear-gradient(135deg, rgba(0, 191, 0, 0.08) 0%, rgba(0, 191, 0, 0.03) 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 191, 0, 0.1);
+        }
+
+        .file-group label {
+            margin-bottom: 12px;
+            color: #001a4d;
+        }
+
+        .file-name {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 10px;
+            word-break: break-word;
+            padding: 8px 12px;
+            background: #f5f5f5;
+            border-radius: 6px;
+        }
+
+        .file-name.selected {
+            color: white;
+            background: #00BF00;
+            font-weight: 700;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 16px 32px;
+            font-size: 1.05em;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00BF00, #009d00);
+            color: white;
+            flex: 1;
+            min-width: 220px;
+            box-shadow: 0 8px 20px rgba(0, 191, 0, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #009d00, #007a00);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0, 191, 0, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #e8e8e8, #d0d0d0);
+            color: #333;
+            flex: 1;
+            min-width: 170px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #d0d0d0, #b8b8b8);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .message {
+            padding: 16px 18px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+            border-left: 5px solid;
+            animation: slideIn 0.4s ease;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .error-message {
+            background: #ffe6e6;
+            color: #c00;
+            border-color: #c00;
+        }
+
+        .success-message {
+            background: #e6ffe6;
+            color: #060;
+            border-color: #060;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .progress-container {
+            display: none;
+            margin: 30px 0;
+        }
+
+        .progress-container.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 0.95em;
+            color: #001a4d;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: #e8e8e8;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00BF00, #00e000, #00BF00);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .progress-percent {
+            font-size: 0.9em;
+            color: #00BF00;
+            font-weight: 700;
+            margin-top: 8px;
+            text-align: right;
+        }
+
+        .summary-section {
+            background: linear-gradient(135deg, rgba(0, 191, 0, 0.08) 0%, rgba(0, 191, 0, 0.02) 100%);
+            padding: 28px;
+            border-radius: 14px;
+            margin-top: 30px;
+            display: none;
+            border: 2px solid #00BF00;
+            box-shadow: 0 8px 20px rgba(0, 191, 0, 0.1);
+        }
+
+        .summary-section.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        .summary-section h3 {
+            margin-bottom: 20px;
+            color: #001a4d;
+            font-size: 1.25em;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 2px solid rgba(0, 191, 0, 0.2);
+            font-size: 0.98em;
+        }
+
+        .summary-item:last-of-type {
+            border-bottom: none;
+        }
+
+        .summary-item strong {
+            color: #001a4d;
+            font-weight: 700;
+        }
+
+        .summary-item .value {
+            font-weight: 700;
+            color: #00BF00;
+            font-size: 1.1em;
+        }
+
+        .skipped-list {
+            background: #fff9e6;
+            padding: 18px;
+            border-radius: 10px;
+            margin-top: 18px;
+            max-height: 350px;
+            overflow-y: auto;
+            border-left: 5px solid #ff9800;
+        }
+
+        .skipped-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #ffe0b2;
+            font-size: 0.92em;
+            color: #666;
+        }
+
+        .skipped-item:last-child {
+            border-bottom: none;
+        }
+
+        .skipped-name {
+            font-weight: 700;
+            color: #d84315;
+            margin-bottom: 4px;
+        }
+
+        .skipped-reason {
+            font-size: 0.85em;
+            color: #999;
+        }
+
+        .footer {
+            background: linear-gradient(135deg, #001a4d 0%, #00BF00 100%);
+            padding: 28px 40px;
+            text-align: center;
+            font-size: 0.95em;
+            color: white;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            padding-bottom: 2px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .footer a:hover {
+            border-bottom-color: white;
+        }
+    </style>
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ Jobconnect Limited</h1>
+            <p>Swift Contract Generator - Create 200+ Professional Staff Contracts in Seconds</p>
+        </div>
+
+        <div class="content">
+            <!-- Intro Section -->
+            <div class="intro-section">
+                <div class="intro-title">🎯 How This Works</div>
+                <div class="intro-text">
+                    Upload your staff list and contract template, provide the site details and dates, and this system will instantly generate individual contracts for every staff member and download them all in a single ZIP file. It's that simple!
+                </div>
+            </div>
+
+            <!-- Quick Steps Overview -->
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-emoji">📊</div>
+                    <div class="step-label">Step 1</div>
+                    <div class="step-text">Upload Staff List (.xlsx or .csv)</div>
+                </div>
+                <div class="step-card">
+                    <div class="step-emoji">📄</div>
+                    <div class="step-label">Step 2</div>
+                    <div class="step-text">Upload Contract Template (.docx)</div>
+                </div>
+                <div class="step-card">
+                    <div class="step-emoji">🏢</div>
+                    <div class="step-label">Step 3</div>
+                    <div class="step-text">Enter Site Name & Dates</div>
+                </div>
+                <div class="step-card">
+                    <div class="step-emoji">⚡</div>
+                    <div class="step-label">Step 4</div>
+                    <div class="step-text">Click Generate & Download</div>
+                </div>
+            </div>
+
+            <div id="errorMessage" class="message error-message"></div>
+            <div id="successMessage" class="message success-message"></div>
+
+            <!-- Step 1: File Uploads -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="step-number">1</span>
+                    Upload Your Files
+                </div>
+                <div class="intro-text" style="margin-bottom: 20px; padding: 0;">
+                    ✅ <strong>Staff List:</strong> Excel file (.xlsx) or CSV with columns for Full Name, Last Name, NIN, Position, Department, Phone, Rate, and Words.<br>
+                    ✅ <strong>Contract Template:</strong> A Word document (.docx) with placeholders like (fullName), (phone), (nin), (position), (Dept), (rate), (words), (site), (currentdate), (start), (end).
+                </div>
+                <div class="input-files-grid">
+                    <div class="file-group">
+                        <label for="staffListFile">📊 Staff List</label>
+                        <div style="font-size: 0.8em; color: #888; margin-bottom: 10px;">Accepts .xlsx, .csv, or .xls</div>
+                        <input type="file" id="staffListFile" accept=".xlsx,.csv,.xls">
+                        <div id="staffFileName" class="file-name"></div>
+                    </div>
+                    <div class="file-group">
+                        <label for="templateFile">📄 Contract Template</label>
+                        <div style="font-size: 0.8em; color: #888; margin-bottom: 10px;">Must be .docx format</div>
+                        <input type="file" id="templateFile" accept=".docx">
+                        <div id="templateFileName" class="file-name"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Site Information -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="step-number">2</span>
+                    Site Information
+                </div>
+                <div class="intro-text" style="margin-bottom: 20px; padding: 0;">
+                    💡 Enter the site name that will appear in the contracts and the ZIP file name. Example: "Kampala Head Office"
+                </div>
+                <div class="form-group">
+                    <label for="siteName">🏢 Site Name</label>
+                    <input type="text" id="siteName" placeholder="e.g., Kampala Office, Nairobi Branch, Main Site">
+                </div>
+            </div>
+
+            <!-- Step 3: Dates -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="step-number">3</span>
+                    Contract Dates
+                </div>
+                <div class="intro-text" style="margin-bottom: 20px; padding: 0;">
+                    📅 Select the dates that will be filled into the contract template. Dates will automatically format as "14th October, 2025".
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label for="currentDate">📅 Current Date</label>
+                        <div class="label-hint">The date the contract is being signed</div>
+                        <input type="date" id="currentDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="startDate">▶️ Start Date</label>
+                        <div class="label-hint">When employment begins</div>
+                        <input type="date" id="startDate">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="endDate">⏹️ End Date</label>
+                    <div class="label-hint">When employment ends (if applicable)</div>
+                    <input type="date" id="endDate">
+                </div>
+            </div>
+
+            <!-- Progress -->
+            <div id="progressContainer" class="progress-container">
+                <div class="progress-text" id="progressText">Preparing...</div>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+                <div class="progress-percent" id="progressPercent">0%</div>
+            </div>
+
+            <!-- Summary -->
+            <div id="summarySection" class="summary-section">
+                <h3>✅ Generation Complete!</h3>
+                <div class="summary-item">
+                    <span>📍 <strong>Site Name:</strong></span>
+                    <span class="value" id="summarysite"></span>
+                </div>
+                <div class="summary-item">
+                    <span><strong>✔️ Generated Contracts:</strong></span>
+                    <span class="value" id="summaryGenerated"></span>
+                </div>
+                <div class="summary-item">
+                    <span><strong>⏭️ Skipped Records:</strong></span>
+                    <span class="value" id="summarySkipped"></span>
+                </div>
+                <div id="skippedListContainer" style="margin-top: 15px;"></div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="button-group">
+                <button id="previewBtn" class="btn-secondary">🔎 Preview First Contract</button>
+                <button id="generateBtn" class="btn-primary">⚡ Generate Contracts Now</button>
+            </div>
+        </div>
+
+        <div class="footer">
+            Developed by <a href="https://www.linkedin.com/in/abdulfatah-katwesigye-b125a0225/" target="_blank">Abdulfatah Katwesigye</a> at Jobconnect Limited ✓
+        </div>
+    </div>
+
+    <script>
+        // ==================== UTILITY FUNCTIONS ====================
+        
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            console.error('Error:', message);
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+            setTimeout(() => errorEl.classList.remove('show'), 6000);
+        }
+
+        function showSuccess(message) {
+            const successEl = document.getElementById('successMessage');
+            successEl.textContent = message;
+            successEl.classList.add('show');
+            setTimeout(() => successEl.classList.remove('show'), 5000);
+        }
+
+        function updateProgress(text, percent) {
+            document.getElementById('progressText').textContent = text;
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressPercent').textContent = Math.round(percent) + '%';
+        }
+
+        function showProgress() {
+            document.getElementById('progressContainer').classList.add('show');
+        }
+
+        function hideProgress() {
+            document.getElementById('progressContainer').classList.remove('show');
+        }
+
+        function hideSummary() {
+            document.getElementById('summarySection').classList.remove('show');
+        }
+
+        function showSummary(site, generated, skipped, skippedList) {
+            const summaryEl = document.getElementById('summarySection');
+            document.getElementById('summarysite').textContent = site;
+            document.getElementById('summaryGenerated').textContent = generated;
+            document.getElementById('summarySkipped').textContent = skipped;
+
+            if (skippedList.length > 0) {
+                const listHTML = '<div class="skipped-list"><strong style="color: #d84315; display: block; margin-bottom: 10px;">⚠️ Skipped Records:</strong>' +
+                    skippedList.map(item => `
+                    <div class="skipped-item">
+                        <div class="skipped-name">${escapeHtml(item.name || 'Unknown')}</div>
+                        <div class="skipped-reason">${escapeHtml(item.reason)}</div>
+                    </div>
+                    `).join('') + '</div>';
+                document.getElementById('skippedListContainer').innerHTML = listHTML;
+            } else {
+                document.getElementById('skippedListContainer').innerHTML = '';
+            }
+
+            summaryEl.classList.add('show');
+        }
+
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function getOrdinalSuffix(day) {
+            if (day > 3 && day < 21) return 'th';
+            switch (day % 10) {
+                case 1: return 'st';
+                case 2: return 'nd';
+                case 3: return 'rd';
+                default: return 'th';
+            }
+        }
+
+        function formatDateForDisplay(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString + 'T00:00:00');
+            const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                          'July', 'August', 'September', 'October', 'November', 'December'];
+            const day = date.getDate();
+            const month = months[date.getMonth()];
+            const year = date.getFullYear();
+            const suffix = getOrdinalSuffix(day);
+            return `${day}${suffix} ${month}, ${year}`;
+        }
+
+        function formatDateForFilename(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString + 'T00:00:00');
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
+
+        function sanitizeFilename(filename) {
+            return filename.replace(/[<>:"/\\|?*\x00-\x1F]/g, '').trim();
+        }
+
+        // ==================== FILE READING ====================
+
+        async function readStaffList(file) {
+            if (!file) throw new Error('Staff list file not selected');
+            
+            // Check if XLSX is available
+            if (typeof XLSX === 'undefined') {
+                throw new Error('❌ Excel library not loaded. Please check your internet connection and refresh the page.');
+            }
+
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                        
+                        // Read all rows including header
+                        const allRows = XLSX.utils.sheet_to_json(worksheet, { 
+                            header: 1,  // Get as arrays, not objects
+                            defval: '' 
+                        });
+
+                        if (allRows.length === 0) {
+                            throw new Error('Excel file is empty');
+                        }
+
+                        // Find the header row (first row with actual data)
+                        let headerRowIndex = 0;
+                        for (let i = 0; i < Math.min(10, allRows.length); i++) {
+                            const row = allRows[i];
+                            const nonEmptyCount = row.filter(cell => 
+                                cell !== null && 
+                                cell !== undefined && 
+                                String(cell).trim() !== '' &&
+                                !String(cell).includes('__EMPTY')
+                            ).length;
+                            
+                            if (nonEmptyCount > 0) {
+                                headerRowIndex = i;
+                                break;
+                            }
+                        }
+
+                        // Extract headers from found row
+                        const headerRow = allRows[headerRowIndex];
+                        const headers = headerRow.map((h, idx) => {
+                            const val = String(h).trim();
+                            return val && !val.includes('__EMPTY') ? val : `Column_${idx}`;
+                        });
+
+                        // Convert remaining rows to objects using found headers
+                        const json = [];
+                        for (let i = headerRowIndex + 1; i < allRows.length; i++) {
+                            const row = allRows[i];
+                            const obj = {};
+                            headers.forEach((header, idx) => {
+                                obj[header] = row[idx] || '';
+                            });
+                            // Only add if row has at least one non-empty value
+                            if (row.some(cell => cell !== null && cell !== undefined && String(cell).trim() !== '')) {
+                                json.push(obj);
+                            }
+                        }
+
+                        if (json.length === 0) {
+                            throw new Error('No data rows found in Excel file');
+                        }
+
+                        resolve(json);
+                    } catch (err) {
+                        reject(new Error('Failed to parse staff list: ' + err.message));
+                    }
+                };
+                reader.onerror = () => reject(new Error('Failed to read staff list file'));
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        async function readTemplate(file) {
+            if (!file) throw new Error('Template file not selected');
+
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const arrayBuffer = e.target.result;
+                        const zip = new JSZip();
+                        const loadedZip = await zip.loadAsync(arrayBuffer);
+                        resolve({ arrayBuffer, zip: loadedZip });
+                    } catch (err) {
+                        reject(new Error('Failed to parse template: ' + err.message));
+                    }
+                };
+                reader.onerror = () => reject(new Error('Failed to read template file'));
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // ==================== HEADER DETECTION ====================
+
+        function normalizeText(text) {
+            return String(text).trim().toLowerCase().replace(/\s+/g, '').replace(/[-_]/g, '');
+        }
+
+        function detectHeaders(staffData) {
+            if (staffData.length === 0) throw new Error('Staff list is empty');
+
+            const headers = Object.keys(staffData[0]);
+            
+            // Define required fields with their common variations
+            const requiredFields = {
+                'Last Name': ['lastname', 'last name', 'surname', 'familyname'],
+                'Full Name': ['fullname', 'full name', 'name', 'employee name', 'staff name'],
+                'NIN': ['nin', 'national id', 'nationalid', 'id number', 'idnumber'],
+                'Position': ['position', 'job title', 'jobtitle', 'role', 'designation'],
+                'Department': ['department', 'dept', 'deptartment', 'division', 'unit'],
+                'Phone': ['phone', 'phonenumber', 'phone number', 'mobile', 'contact', 'telephone'],
+                'Rate': ['rate', 'salary', 'wage', 'payrate', 'pay rate', 'compensation'],
+                'Words': ['words', 'description', 'notes', 'remarks', 'comment']
+            };
+            
+            const headerMap = {};
+            const normalizedHeaders = headers.map(h => normalizeText(h));
+
+            for (const [required, variations] of Object.entries(requiredFields)) {
+                let found = false;
+                
+                // Try to find the header in variations
+                for (const variation of variations) {
+                    const normVariation = normalizeText(variation);
+                    const matchIndex = normalizedHeaders.findIndex(h => h === normVariation);
+                    
+                    if (matchIndex !== -1) {
+                        headerMap[required] = headers[matchIndex];
+                        found = true;
+                        break;
+                    }
+                }
+                
+                if (!found) {
+                    // Show available columns to help user debug
+                    const availableColumns = headers.join(', ');
+                    throw new Error(`❌ Missing required column: "${required}"\n\nAvailable columns in your file:\n${availableColumns}\n\nTip: Make sure you have columns for: Last Name, Full Name, NIN, Position, Department, Phone, Rate, Words`);
+                }
+            }
+
+            return headerMap;
+        }
+
+        // ==================== PLACEHOLDER REPLACEMENT ====================
+
+        function replacePlaceholders(text, replacements) {
+            let result = text;
+            
+            for (const [placeholder, value] of Object.entries(replacements)) {
+                // Create patterns for different case variations
+                const patterns = [
+                    new RegExp(`\\(${placeholder}\\)`, 'gi'),
+                    new RegExp(`\\(\\s*${placeholder}\\s*\\)`, 'gi'),
+                ];
+                
+                for (const pattern of patterns) {
+                    result = result.replace(pattern, value || '');
+                }
+            }
+            
+            return result;
+        }
+
+        async function fillDocxTemplate(templateZip, replacements) {
+            const zip = new JSZip();
+            
+            // Copy all files from original
+            for (const filename of Object.keys(templateZip.files)) {
+                const file = templateZip.file(filename);
+                if (file) {
+                    const content = await file.async('arraybuffer');
+                    zip.file(filename, content);
+                }
+            }
+
+            // Replace in document.xml using DOM parsing
+            const docXml = zip.file('word/document.xml');
+            if (docXml) {
+                let xmlContent = await docXml.async('string');
+                xmlContent = safeReplaceInDocx(xmlContent, replacements);
+                zip.file('word/document.xml', xmlContent);
+            }
+            
+            // Replace in header1.xml if it exists
+            const headerXml = zip.file('word/header1.xml');
+            if (headerXml) {
+                let headerContent = await headerXml.async('string');
+                headerContent = safeReplaceInDocx(headerContent, replacements);
+                zip.file('word/header1.xml', headerContent);
+            }
+
+            return zip.generateAsync({ type: 'arraybuffer' });
+        }
+
+        function safeReplaceInDocx(xmlContent, replacements) {
+            let result = xmlContent;
+            
+            // For each placeholder, do a simple string replacement
+            // This is safer than trying to parse XML
+            for (const [placeholder, value] of Object.entries(replacements)) {
+                // Escape special regex characters
+                const escapedPlaceholder = placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                
+                // Create patterns for the placeholder
+                const patterns = [
+                    // Pattern 1: (placeholder) with possible spaces and split across tags
+                    new RegExp(`\\(\\s*${escapedPlaceholder}\\s*\\)`, 'gi'),
+                    // Pattern 2: Handle when it's split like (full<tag>Name)
+                    new RegExp(`\\(([^)]*?)${escapedPlaceholder}([^)]*?)\\)`, 'gi'),
+                ];
+                
+                // Escape XML special chars in replacement
+                const safeValue = String(value || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+                
+                for (const pattern of patterns) {
+                    result = result.replace(pattern, safeValue);
+                }
+            }
+            
+            return result;
+        }
+
+        // ==================== MAIN GENERATION ====================
+
+        async function generateContracts(preview = false) {
+            try {
+                // Validation
+                const staffFile = document.getElementById('staffListFile').files[0];
+                const templateFile = document.getElementById('templateFile').files[0];
+                const siteName = document.getElementById('siteName').value.trim();
+                const currentDate = document.getElementById('currentDate').value;
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+
+                if (!staffFile) throw new Error('Please upload a staff list file');
+                if (!templateFile) throw new Error('Please upload a contract template');
+                if (!siteName) throw new Error('Please enter a site name');
+                if (!currentDate) throw new Error('Please select current date');
+                if (!startDate) throw new Error('Please select start date');
+                if (!endDate) throw new Error('Please select end date');
+
+                hideSummary();
+                showProgress();
+
+                // Format dates
+                const formattedCurrent = formatDateForDisplay(currentDate);
+                const formattedStart = formatDateForDisplay(startDate);
+                const formattedEnd = formatDateForDisplay(endDate);
+
+                // Read files
+                updateProgress('📂 Reading staff list...', 10);
+                const staffData = await readStaffList(staffFile);
+
+                updateProgress('📋 Analyzing template...', 20);
+                const templateData = await readTemplate(templateFile);
+
+                // Detect headers
+                updateProgress('🔍 Detecting column headers...', 30);
+                const headerMap = detectHeaders(staffData);
+
+                // Generate contracts
+                const zip = new JSZip();
+                const contracts = [];
+                const skippedList = [];
+                let processedCount = 0;
+
+                for (let i = 0; i < staffData.length; i++) {
+                    const row = staffData[i];
+                    // Convert all values to strings to handle numbers and other types
+                    const fullName = String(row[headerMap['Full Name']] || '').trim();
+                    const lastName = String(row[headerMap['Last Name']] || '').trim();
+                    const nin = String(row[headerMap['NIN']] || '').trim();
+                    const position = String(row[headerMap['Position']] || '').trim();
+                    const department = String(row[headerMap['Department']] || '').trim();
+                    const phone = String(row[headerMap['Phone']] || '').trim();
+                    const rate = String(row[headerMap['Rate']] || '').trim();
+                    const words = String(row[headerMap['Words']] || '').trim();
+
+                    // Validation
+                    const errors = [];
+                    if (!fullName) errors.push('Missing Full Name');
+                    if (!nin) errors.push('Missing NIN');
+                    if (!position) errors.push('Missing Position');
+                    if (!department) errors.push('Missing Department');
+                    if (!phone) errors.push('Missing Phone');
+                    if (!rate) errors.push('Missing Rate');
+
+                    if (errors.length > 0) {
+                        skippedList.push({
+                            name: fullName || 'Unknown',
+                            reason: errors.join(', ')
+                        });
+                        continue;
+                    }
+
+                    // Fill template
+                    const replacements = {
+                        fullName: fullName,
+                        phone: phone,
+                        nin: nin,
+                        position: position,
+                        Dept: department,
+                        rate: rate,
+                        words: words,
+                        lastname: lastName,
+                        site: siteName,
+                        currentdate: formattedCurrent,
+                        start: formattedStart,
+                        end: formattedEnd,
+                        // Case variations
+                        'Full Name': fullName,
+                        'Phone': phone,
+                        'NIN': nin,
+                        'Position': position,
+                        'Department': department,
+                        'Rate': rate,
+                        'Words': words,
+                        'Last Name': lastName,
+                        'Site': siteName,
+                        'Current Date': formattedCurrent,
+                        'Start': formattedStart,
+                        'End': formattedEnd,
+                    };
+
+                    const filledDocx = await fillDocxTemplate(templateData.zip, replacements);
+                    const sanitizedName = sanitizeFilename(fullName);
+                    zip.file(`${sanitizedName}.docx`, filledDocx);
+
+                    contracts.push(sanitizedName);
+                    processedCount++;
+
+                    if (preview && processedCount === 1) {
+                        // Download preview
+                        const previewFileName = `${sanitizedName} (Preview).docx`;
+                        console.log('Downloading preview:', previewFileName);
+                        saveAs(new Blob([filledDocx], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }), previewFileName);
+                        hideProgress();
+                        showSuccess(`✅ Preview downloaded: ${previewFileName}`);
+                        console.log('Preview download complete');
+                        return;
+                    }
+
+                    const progress = 30 + (i / staffData.length) * 50;
+                    updateProgress(`⚙️ Generating contract ${processedCount} of ${staffData.length}...`, progress);
+
+                    // Yield to avoid blocking
+                    if (i % 5 === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 0));
+                    }
+                }
+
+                console.log('✅ Generated', processedCount, 'contracts');
+
+                if (processedCount === 0) {
+                    hideProgress();
+                    showError('No valid staff records found to generate contracts');
+                    showSummary(siteName, 0, staffData.length, skippedList);
+                    return;
+                }
+
+                // Create zip
+                updateProgress('📦 Zipping files...', 85);
+                const zipFileName = `${sanitizeFilename(siteName)} - ${formatDateForFilename(currentDate)}.zip`;
+                console.log('📦 Creating ZIP:', zipFileName);
+                const zipData = await zip.generateAsync({ type: 'arraybuffer' });
+                console.log('✅ ZIP created, size:', zipData.byteLength, 'bytes');
+
+                updateProgress('✅ Download ready!', 100);
+
+                // Trigger the download
+                console.log('⬇️ Starting download...');
+                setTimeout(() => {
+                    const blob = new Blob([zipData], { type: 'application/zip' });
+                    console.log('📥 Blob created:', blob.size, 'bytes');
+                    saveAs(blob, zipFileName);
+                    console.log('✅ saveAs() called for:', zipFileName);
+                    
+                    setTimeout(() => {
+                        hideProgress();
+                        showSuccess(`✅ SUCCESS! Generated ${processedCount} contracts and downloaded:\n${zipFileName}`);
+                        showSummary(siteName, processedCount, skippedList.length, skippedList);
+                        console.log('✅ All done!');
+                    }, 300);
+                }, 200);
+
+            } catch (err) {
+                hideProgress();
+                console.error('❌ ERROR:', err);
+                console.error('Stack:', err.stack);
+                showError('❌ Error: ' + err.message);
+            }
+        }
+
+        // ==================== EVENT LISTENERS ====================
+
+        document.getElementById('staffListFile').addEventListener('change', (e) => {
+            const fileName = e.target.files[0]?.name || '';
+            document.getElementById('staffFileName').textContent = fileName ? '✅ ' + fileName : '';
+            document.getElementById('staffFileName').classList.toggle('selected', !!fileName);
+        });
+
+        document.getElementById('templateFile').addEventListener('change', (e) => {
+            const fileName = e.target.files[0]?.name || '';
+            document.getElementById('templateFileName').textContent = fileName ? '✅ ' + fileName : '';
+            document.getElementById('templateFileName').classList.toggle('selected', !!fileName);
+        });
+
+        document.getElementById('generateBtn').addEventListener('click', () => {
+            generateContracts(false);
+        });
+
+        document.getElementById('previewBtn').addEventListener('click', () => {
+            generateContracts(true);
+        });
+
+        // Set today's date as default
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('currentDate').value = today;
+
+        // Check and display library loading status
+        window.addEventListener('load', function() {
+            let status = '✓ System ready!';
+            console.log('XLSX Status:', typeof XLSX !== 'undefined' ? 'LOADED ✓' : 'NOT LOADED ✗');
+            console.log('JSZip Status:', typeof JSZip !== 'undefined' ? 'LOADED ✓' : 'NOT LOADED ✗');
+            console.log('FileSaver Status:', typeof saveAs !== 'undefined' ? 'LOADED ✓' : 'NOT LOADED ✗');
+        });
+    </script>
+</body>
+</html>
